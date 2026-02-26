@@ -146,6 +146,20 @@ Claude Code launches a Chrome instance, navigates to each application page, dete
 
 The Playwright MCP server is configured automatically at runtime per worker. No manual MCP setup needed.
 
+### Google Sheets Integration
+ApplyPilot can automatically track your job applications in a Google Sheet.
+1. Obtain a Google Service Account JSON key file.
+2. Set `GOOGLE_APPLICATION_CREDENTIALS` in your `.env` to the path of this JSON file.
+3. Share your target Google Sheet with the Service Account email with 'Editor' permissions.
+4. Ensure the `SPREADSHEET_ID` in `src/applypilot/apply/tracker.py` matches your sheet.
+
+```bash
+# Optional: Run a production integration test to verify connectivity
+export APPLYPILOT_PROD_TEST=1
+export PYTHONPATH=$PYTHONPATH:$(pwd)/src
+python3 tests/test_tracker_integration.py
+```
+
 ```bash
 # Utility modes (no Chrome/Claude needed)
 applypilot apply --mark-applied URL    # manually mark a job as applied

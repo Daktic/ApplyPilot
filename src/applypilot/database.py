@@ -128,6 +128,8 @@ def init_db(db_path: Path | str | None = None) -> sqlite3.Connection:
             agent_id              TEXT,
             last_attempted_at     TEXT,
             apply_duration_ms     INTEGER,
+            in_office_amount      INTEGER,
+            posted_salary_top     INTEGER,
             apply_task_id         TEXT,
             verification_confidence TEXT
         )
@@ -178,6 +180,8 @@ _ALL_COLUMNS: dict[str, str] = {
     "agent_id": "TEXT",
     "last_attempted_at": "TEXT",
     "apply_duration_ms": "INTEGER",
+    "in_office_amount": "INTEGER",
+    "posted_salary_top": "INTEGER",
     "apply_task_id": "TEXT",
     "verification_confidence": "TEXT",
 }

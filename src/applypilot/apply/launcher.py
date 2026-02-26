@@ -185,6 +185,24 @@ def mark_result(url: str, status: str, error: str | None = None,
                            apply_duration_ms = ?, apply_task_id = ?
             WHERE url = ?
         """, (now, duration_ms, task_id, url))
+
+        # Track to Google Sheet if integrated
+        job = conn.execute("SELECT site, title, location, in_office_amount, posted_salary_top, url FROM jobs WHERE url = ?", (url,)).fetchone()
+        if job:
+            try:
+                from applypilot.apply.tracker import track_application
+                # We don't have cover_letter explicitly in the DB, but can infer or default it
+                track_application(
+                    company=job["site"] or "Unknown",
+                    position=job["title"] or "Unknown",
+                    cover_letter=True, # Usually we submit a cover letter if we reach here
+                    location=job["location"] or "Remote",
+                    in_office_amount=job["in_office_amount"] or 0,
+                    posted_salary_top=job["posted_salary_top"] or 0,
+                    website=job["url"]
+                )
+            except Exception as e:
+                logger.error(f"Failed to track application to Google Sheets: {e}")
     else:
         attempts = 99 if permanent else "COALESCE(apply_attempts, 0) + 1"
         conn.execute(f"""
@@ -255,21 +273,10 @@ def mark_job(url: str, status: str, reason: str | None = None) -> None:
         status: Either 'applied' or 'failed'.
         reason: Failure reason (only for status='failed').
     """
-    conn = get_connection()
-    now = datetime.now(timezone.utc).isoformat()
     if status == "applied":
-        conn.execute("""
-            UPDATE jobs SET apply_status = 'applied', applied_at = ?,
-                           apply_error = NULL, agent_id = NULL
-            WHERE url = ?
-        """, (now, url))
+        mark_result(url, "applied")
     else:
-        conn.execute("""
-            UPDATE jobs SET apply_status = 'failed', apply_error = ?,
-                           apply_attempts = 99, agent_id = NULL
-            WHERE url = ?
-        """, (reason or "manual", url))
-    conn.commit()
+        mark_result(url, "failed", error=reason or "manual", permanent=True)
 
 
 def reset_failed() -> int:
